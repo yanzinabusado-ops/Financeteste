@@ -62,39 +62,9 @@ export interface Database {
           updated_at?: string;
         };
       };
-      category_budgets: {
-        Row: {
-          id: string;
-          user_id: string;
-          month_year: string;
-          category: string;
-          limit_amount: number;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          month_year: string;
-          category: string;
-          limit_amount: number;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          month_year?: string;
-          category?: string;
-          limit_amount?: number;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
     };
   };
 }
 
 export type Income = Database['public']['Tables']['income']['Row'];
 export type Expense = Database['public']['Tables']['expenses']['Row'];
-export type CategoryBudget = Database['public']['Tables']['category_budgets']['Row'];

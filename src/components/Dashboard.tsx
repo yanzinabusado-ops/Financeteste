@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { incomeService, expenseService, formatError } from '../services/supabase';
+import { supabase } from '../lib/supabase';
 import type { Income, Expense } from '../types/database';
 import IncomeCard from './IncomeCard';
 import ExpensesList from './ExpensesList';
@@ -9,14 +9,13 @@ import SummaryCards from './SummaryCards';
 import ExpensesChart from './ExpensesChart';
 import FinancialInsights from './FinancialInsights';
 import TopExpenses from './TopExpenses';
-import { LogOut, Wallet, AlertCircle } from 'lucide-react';
+import { LogOut, Wallet } from 'lucide-react';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
   const [income, setIncome] = useState<Income | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const currentMonthYear = new Date().toISOString().slice(0, 7);
 
@@ -30,20 +29,27 @@ export default function Dashboard() {
     if (!user) return;
 
     setLoading(true);
-    setError(null);
 
-    try {
-      const [incomeData, expensesData] = await Promise.all([
-        incomeService.getByMonth(user.id, currentMonthYear),
-        expenseService.getAll(user.id),
-      ]);
+    const [incomeResult, expensesResult] = await Promise.all([
+      supabase
+        .from('income')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('month_year', currentMonthYear)
+        .maybeSingle(),
+      supabase
+        .from('expenses')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false })
+    ]);
 
-      setIncome(incomeData);
-      setExpenses(expensesData);
-    } catch (err) {
-      const errorMsg = formatError(err).message;
-      setError(errorMsg);
-      console.error('Error loading dashboard data:', err);
+    if (incomeResult.data) {
+      setIncome(incomeResult.data);
+    }
+
+    if (expensesResult.data) {
+      setExpenses(expensesResult.data);
     }
 
     setLoading(false);
@@ -101,13 +107,6 @@ export default function Dashboard() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
-
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>

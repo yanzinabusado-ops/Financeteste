@@ -1,8 +1,8 @@
 import { useState, FormEvent } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { incomeService, formatError } from '../services/supabase';
+import { supabase } from '../lib/supabase';
 import type { Income } from '../types/database';
-import { DollarSign, Edit2, Check, X, AlertCircle } from 'lucide-react';
+import { DollarSign, Edit2, Check, X } from 'lucide-react';
 
 interface IncomeCardProps {
   income: Income | null;
@@ -16,35 +16,43 @@ export default function IncomeCard({ income, monthYear, onUpdate }: IncomeCardPr
   const [amount, setAmount] = useState(income?.amount?.toString() || '');
   const [description, setDescription] = useState(income?.description || '');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
     setLoading(true);
-    setError(null);
 
-    try {
-      const incomeData = {
-        user_id: user.id,
-        amount: parseFloat(amount),
-        month_year: monthYear,
-        description,
-      };
+    const incomeData = {
+      user_id: user.id,
+      amount: parseFloat(amount),
+      month_year: monthYear,
+      description,
+    };
 
-      if (income) {
-        const data = await incomeService.update(income.id, incomeData);
-        onUpdate(data);
-        setIsEditing(false);
-      } else {
-        const data = await incomeService.create(incomeData);
+    if (income) {
+      const { data, error } = await supabase
+        .from('income')
+        .update(incomeData)
+        .eq('id', income.id)
+        .select()
+        .single();
+
+      if (!error && data) {
         onUpdate(data);
         setIsEditing(false);
       }
-    } catch (err) {
-      setError(formatError(err).message);
-      console.error('Error saving income:', err);
+    } else {
+      const { data, error } = await supabase
+        .from('income')
+        .insert([incomeData])
+        .select()
+        .single();
+
+      if (!error && data) {
+        onUpdate(data);
+        setIsEditing(false);
+      }
     }
 
     setLoading(false);
@@ -77,15 +85,8 @@ export default function IncomeCard({ income, monthYear, onUpdate }: IncomeCardPr
       </div>
 
       {isEditing ? (
-        <>
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Valor da Renda
             </label>
@@ -136,8 +137,7 @@ export default function IncomeCard({ income, monthYear, onUpdate }: IncomeCardPr
               </button>
             )}
           </div>
-          </form>
-        </>
+        </form>
       ) : (
         <div className="space-y-4">
           <div className="bg-emerald-50 rounded-xl p-4">

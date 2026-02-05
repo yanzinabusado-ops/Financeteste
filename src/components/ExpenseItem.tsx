@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react';
-import { expenseService, formatError } from '../services/supabase';
+import { supabase } from '../lib/supabase';
 import type { Expense } from '../types/database';
-import { Edit2, Trash2, Check, X, Calendar, AlertCircle } from 'lucide-react';
+import { Edit2, Trash2, Check, X, Calendar } from 'lucide-react';
 
 interface ExpenseItemProps {
   expense: Expense;
@@ -27,28 +27,28 @@ export default function ExpenseItem({ expense, onUpdate, onDelete }: ExpenseItem
   const [category, setCategory] = useState(expense.category);
   const [date, setDate] = useState(expense.date);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const categoryInfo = CATEGORIES.find((cat) => cat.value === expense.category) || CATEGORIES[CATEGORIES.length - 1];
 
   const handleUpdate = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
 
-    try {
-      const data = await expenseService.update(expense.id, {
+    const { data, error } = await supabase
+      .from('expenses')
+      .update({
         description,
         amount: parseFloat(amount),
         category,
         date,
-      });
+      })
+      .eq('id', expense.id)
+      .select()
+      .single();
 
+    if (!error && data) {
       onUpdate(data);
       setIsEditing(false);
-    } catch (err) {
-      setError(formatError(err).message);
-      console.error('Error updating expense:', err);
     }
 
     setLoading(false);
@@ -58,14 +58,11 @@ export default function ExpenseItem({ expense, onUpdate, onDelete }: ExpenseItem
     if (!confirm('Tem certeza que deseja excluir esta despesa?')) return;
 
     setLoading(true);
-    setError(null);
 
-    try {
-      await expenseService.delete(expense.id);
+    const { error } = await supabase.from('expenses').delete().eq('id', expense.id);
+
+    if (!error) {
       onDelete(expense.id);
-    } catch (err) {
-      setError(formatError(err).message);
-      console.error('Error deleting expense:', err);
     }
 
     setLoading(false);
@@ -85,12 +82,6 @@ export default function ExpenseItem({ expense, onUpdate, onDelete }: ExpenseItem
   if (isEditing) {
     return (
       <div className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-xl p-4 border-2 border-teal-200 animate-slideDown">
-        {error && (
-          <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-            <p className="text-xs text-red-600">{error}</p>
-          </div>
-        )}
         <form onSubmit={handleUpdate} className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input
