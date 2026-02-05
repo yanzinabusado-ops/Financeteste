@@ -1,8 +1,8 @@
 import { useState, FormEvent } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { expenseService, formatError } from '../services/supabase';
 import type { Expense } from '../types/database';
-import { Plus, ShoppingCart } from 'lucide-react';
+import { Plus, ShoppingCart, AlertCircle } from 'lucide-react';
 
 interface AddExpenseProps {
   onExpenseAdded: (expense: Expense) => void;
@@ -27,34 +27,33 @@ export default function AddExpense({ onExpenseAdded }: AddExpenseProps) {
   const [category, setCategory] = useState('other');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
     setLoading(true);
+    setError(null);
 
-    const { data, error } = await supabase
-      .from('expenses')
-      .insert([
-        {
-          user_id: user.id,
-          description,
-          amount: parseFloat(amount),
-          category,
-          date,
-        },
-      ])
-      .select()
-      .single();
+    try {
+      const data = await expenseService.create({
+        user_id: user.id,
+        description,
+        amount: parseFloat(amount),
+        category,
+        date,
+      });
 
-    if (!error && data) {
       onExpenseAdded(data);
       setDescription('');
       setAmount('');
       setCategory('other');
       setDate(new Date().toISOString().split('T')[0]);
       setIsOpen(false);
+    } catch (err) {
+      setError(formatError(err).message);
+      console.error('Error adding expense:', err);
     }
 
     setLoading(false);
@@ -78,8 +77,15 @@ export default function AddExpense({ onExpenseAdded }: AddExpenseProps) {
       </div>
 
       {isOpen && (
-        <form onSubmit={handleSubmit} className="space-y-4 animate-slideDown">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <>
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-4 animate-slideDown">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Descrição
@@ -149,7 +155,8 @@ export default function AddExpense({ onExpenseAdded }: AddExpenseProps) {
           >
             {loading ? 'Adicionando...' : 'Adicionar Despesa'}
           </button>
-        </form>
+          </form>
+        </>
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { expenseService } from '../services/supabase';
 import { generateInsights, getPreviousMonthYear, getCurrentMonthYear } from '../lib/insights';
 import type { FinancialInsight } from '../lib/insights';
 import type { Expense } from '../types/database';
@@ -29,22 +29,12 @@ export default function FinancialInsights({ income, expenses }: FinancialInsight
     setLoading(true);
 
     try {
-      // Buscar despesas do mês anterior para comparação
       const previousMonthYear = getPreviousMonthYear();
-      const currentMonthYear = getCurrentMonthYear();
-
-      const { data: previousExpenses } = await supabase
-        .from('expenses')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('date', `${previousMonthYear}-01`)
-        .lt('date', `${currentMonthYear}-01`);
-
-      // Gerar insights
-      const newInsights = generateInsights(income, expenses, previousExpenses || undefined);
+      const previousExpenses = await expenseService.getByMonth(user.id, previousMonthYear);
+      const newInsights = generateInsights(income, expenses, previousExpenses);
       setInsights(newInsights);
     } catch (error) {
-      console.error('Erro ao carregar insights:', error);
+      console.error('Error loading insights:', error);
     }
 
     setLoading(false);
