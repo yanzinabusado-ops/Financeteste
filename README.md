@@ -81,11 +81,23 @@ FinanceControl/
 
 ## 🔒 Segurança
 
-- Row Level Security (RLS) habilitado
-- Autenticação JWT via Supabase
-- Validação de inputs no frontend
-- Sanitização de dados
-- Políticas de acesso por usuário
+- ✅ Row Level Security (RLS) habilitado em todas as tabelas
+- ✅ Autenticação JWT via Supabase com PKCE flow
+- ✅ Validação e sanitização de inputs no frontend
+- ✅ Content Security Policy (CSP) configurado
+- ✅ Headers de segurança (HSTS, X-Frame-Options, etc.)
+- ✅ Rate limiting no cliente
+- ✅ Políticas de acesso isoladas por usuário
+- ⚠️ **IMPORTANTE**: Nunca commite o arquivo `.env` com credenciais reais
+
+### Auditoria de Segurança
+
+Execute a auditoria de segurança:
+```bash
+npm audit
+```
+
+Veja o relatório completo em `SECURITY_AUDIT.md`
 
 ## 🧪 Testes
 
@@ -97,6 +109,23 @@ npm run test
 
 ```bash
 npm run build
+```
+
+## 🚀 Deploy
+
+Para fazer deploy no Vercel, siga o guia completo em `DEPLOY.md`
+
+Resumo rápido:
+1. Rotacione suas credenciais do Supabase (se foram expostas)
+2. Configure as variáveis de ambiente no Vercel
+3. Conecte seu repositório GitHub ao Vercel
+4. Deploy automático a cada push
+
+```bash
+# Via CLI
+npm i -g vercel
+vercel login
+vercel
 ```
 
 ## 📝 Scripts Disponíveis
