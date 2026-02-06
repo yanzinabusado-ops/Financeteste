@@ -1,14 +1,66 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { generateInsights, getPreviousMonthYear, getCurrentMonthYear } from '../lib/insights';
+import { getPreviousMonthYear, getCurrentMonthYear } from '../lib/insights';
+import { 
+  generateBehaviorInsights, 
+  prioritizeAndFilterInsights,
+  calculateMonthComparison,
+  formatComparisonMessage
+} from '../lib/analytics';
 import type { FinancialInsight } from '../lib/insights';
+import type { BehaviorInsight } from '../lib/analytics';
 import type { Expense } from '../types/database';
 import { AlertCircle, Lightbulb, TrendingUp } from 'lucide-react';
 
 interface FinancialInsightsProps {
   income: number;
   expenses: Expense[];
+}
+
+/**
+ * Convert BehaviorInsight from analytics service to FinancialInsight for display
+ * Maps new insight types to existing UI types and icons
+ */
+function convertBehaviorInsightToFinancialInsight(behaviorInsight: BehaviorInsight): FinancialInsight {
+  // Map insight types to UI display types
+  let type: 'warning' | 'info' | 'success';
+  let title: string;
+  let icon: string;
+
+  switch (behaviorInsight.type) {
+    case 'recurring':
+      type = 'info';
+      title = 'Despesa Recorrente';
+      icon = '🔄';
+      break;
+    case 'dominant_category':
+      type = 'warning';
+      title = 'Categoria Dominante';
+      icon = '📊';
+      break;
+    case 'spike':
+      type = 'warning';
+      title = 'Gasto Elevado';
+      icon = '⚠️';
+      break;
+    case 'consistent':
+      type = 'success';
+      title = 'Gastos Consistentes';
+      icon = '✅';
+      break;
+    default:
+      type = 'info';
+      title = 'Insight';
+      icon = '💡';
+  }
+
+  return {
+    type,
+    title,
+    message: behaviorInsight.message,
+    icon
+  };
 }
 
 export default function FinancialInsights({ income, expenses }: FinancialInsightsProps) {
@@ -29,7 +81,51 @@ export default function FinancialInsights({ income, expenses }: FinancialInsight
     setLoading(true);
 
     try {
-      // Buscar despesas do mês anterior para comparação
+      const allInsights: FinancialInsight[] = [];
+      const totalExpenses = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
+      const expensePercentage = income > 0 ? (totalExpenses / income) * 100 : 0;
+
+      // 1. Insight principal sobre gastos vs renda (apenas 1)
+      if (expensePercentage > 80) {
+        allInsights.push({
+          type: 'warning',
+          title: 'Atenção com Orçamento',
+          message: `Seus gastos atingiram ${expensePercentage.toFixed(1)}% da sua renda. Considere reduzir despesas.`,
+          icon: '⚠️',
+        });
+      } else if (expensePercentage > 60) {
+        allInsights.push({
+          type: 'info',
+          title: 'Gastos Moderados',
+          message: `Você gastou ${expensePercentage.toFixed(1)}% da sua renda. Mantenha o bom trabalho!`,
+          icon: '💡',
+        });
+      } else if (totalExpenses > 0) {
+        allInsights.push({
+          type: 'success',
+          title: 'Excelente Controle',
+          message: `Você gastou apenas ${expensePercentage.toFixed(1)}% da sua renda. Parabéns!`,
+          icon: '✅',
+        });
+      }
+
+      // 2. Despesas individuais significativas (máximo 2)
+      const highExpenses = expenses
+        .filter((exp) => income > 0 && Number(exp.amount) > income * 0.15)
+        .sort((a, b) => Number(b.amount) - Number(a.amount))
+        .slice(0, 2); // Limita a 2 despesas
+
+      highExpenses.forEach((exp) => {
+        const percentage = income > 0 ? (Number(exp.amount) / income) * 100 : 0;
+        allInsights.push({
+          type: 'warning',
+          title: 'Despesa Significativa',
+          message: `"${exp.description}" representa ${percentage.toFixed(1)}% da sua renda mensal.`,
+          icon: '⚠️',
+        });
+      });
+
+      // 3. Comparação com mês anterior (apenas se houver dados)
       const previousMonthYear = getPreviousMonthYear();
       const currentMonthYear = getCurrentMonthYear();
 
@@ -40,9 +136,24 @@ export default function FinancialInsights({ income, expenses }: FinancialInsight
         .gte('date', `${previousMonthYear}-01`)
         .lt('date', `${currentMonthYear}-01`);
 
-      // Gerar insights
-      const newInsights = generateInsights(income, expenses, previousExpenses || undefined);
-      setInsights(newInsights);
+      if (previousExpenses && previousExpenses.length > 0) {
+        const comparison = calculateMonthComparison(expenses, previousExpenses);
+        const comparisonMessage = formatComparisonMessage(comparison);
+        
+        if (comparisonMessage && comparison) {
+          allInsights.push({
+            type: comparison.isIncrease ? 'warning' : 'success',
+            title: comparison.isIncrease ? 'Gastos Aumentaram' : 'Gastos Diminuíram',
+            message: comparisonMessage,
+            icon: comparison.isIncrease ? '📈' : '📉',
+          });
+        }
+      }
+
+      // 4. Limita a 3 insights no total para não poluir
+      const finalInsights = allInsights.slice(0, 3);
+      
+      setInsights(finalInsights);
     } catch (error) {
       console.error('Erro ao carregar insights:', error);
     }
@@ -52,18 +163,21 @@ export default function FinancialInsights({ income, expenses }: FinancialInsight
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-lg p-6 border border-emerald-100">
-        <div className="animate-pulse space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 bg-gray-200 rounded-lg"></div>
-          ))}
-        </div>
+      <div className="animate-pulse space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-16 bg-gray-200 rounded-lg"></div>
+        ))}
       </div>
     );
   }
 
   if (insights.length === 0) {
-    return null;
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-50" />
+        <p>Adicione despesas para ver insights personalizados</p>
+      </div>
+    );
   }
 
   const getInsightIcon = (insight: FinancialInsight) => {
@@ -113,14 +227,7 @@ export default function FinancialInsights({ income, expenses }: FinancialInsight
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 border border-emerald-100">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="bg-cyan-100 p-2 rounded-lg">
-          <Lightbulb className="w-5 h-5 text-cyan-600" />
-        </div>
-        <h2 className="text-xl font-bold text-gray-800">Insights do Mês</h2>
-      </div>
-
+    <div className="space-y-4">
       <div className="space-y-3">
         {insights.map((insight, index) => {
           const styles = getInsightStyles(insight);
@@ -144,9 +251,9 @@ export default function FinancialInsights({ income, expenses }: FinancialInsight
         })}
       </div>
 
-      <div className="mt-6 pt-4 border-t border-gray-200">
+      <div className="pt-4 border-t border-gray-200">
         <p className="text-xs text-gray-500 text-center">
-          Insights atualizados automaticamente com suas despesas
+          Insights atualizados automaticamente
         </p>
       </div>
     </div>

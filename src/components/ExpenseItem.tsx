@@ -32,13 +32,38 @@ export default function ExpenseItem({ expense, onUpdate, onDelete }: ExpenseItem
 
   const handleUpdate = async (e: FormEvent) => {
     e.preventDefault();
+
+    // Validar valor numérico
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      alert('Por favor, insira um valor válido maior que zero');
+      return;
+    }
+
+    if (numAmount > 999999999) {
+      alert('Valor muito alto. Máximo permitido: R$ 999.999.999,00');
+      return;
+    }
+
+    // Sanitizar descrição
+    const sanitizedDescription = description
+      .replace(/[<>]/g, '')
+      .trim()
+      .slice(0, 200);
+
+    if (!sanitizedDescription) {
+      alert('Por favor, insira uma descrição válida');
+      return;
+    }
+
     setLoading(true);
 
+    // @ts-ignore - Supabase type inference issue with strict mode
     const { data, error } = await supabase
       .from('expenses')
       .update({
-        description,
-        amount: parseFloat(amount),
+        description: sanitizedDescription,
+        amount: numAmount,
         category,
         date,
       })
@@ -87,6 +112,7 @@ export default function ExpenseItem({ expense, onUpdate, onDelete }: ExpenseItem
             <input
               type="text"
               required
+              maxLength={200}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 outline-none text-sm"
@@ -96,6 +122,8 @@ export default function ExpenseItem({ expense, onUpdate, onDelete }: ExpenseItem
             <input
               type="number"
               step="0.01"
+              min="0.01"
+              max="999999999"
               required
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -155,33 +183,39 @@ export default function ExpenseItem({ expense, onUpdate, onDelete }: ExpenseItem
   }
 
   return (
-    <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-4 border border-gray-200 hover:border-teal-300 hover:shadow-md transition-all duration-200 group">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 flex-1">
-          <div className="text-3xl">{categoryInfo.icon}</div>
-
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-800 truncate">{expense.description}</h3>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs px-2 py-1 bg-teal-100 text-teal-700 rounded-full font-medium">
-                {categoryInfo.label}
-              </span>
-              <div className="flex items-center gap-1 text-xs text-gray-500">
-                <Calendar className="w-3 h-3" />
-                {formatDate(expense.date)}
-              </div>
-            </div>
-          </div>
-
-          <div className="text-right">
-            <p className="text-xl font-bold text-red-600">{formatCurrency(Number(expense.amount))}</p>
+    <div className="bg-white rounded-xl p-4 border-2 border-gray-100 hover:border-teal-300 hover:shadow-lg transition-all duration-200 group">
+      <div className="flex items-center justify-between gap-4">
+        {/* Icon */}
+        <div className="flex-shrink-0">
+          <div className="w-12 h-12 bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl flex items-center justify-center text-2xl">
+            {categoryInfo.icon}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-gray-900 truncate text-lg">{expense.description}</h3>
+          <div className="flex items-center gap-2 mt-1.5">
+            <span className="text-xs px-2.5 py-1 bg-gradient-to-r from-teal-100 to-cyan-100 text-teal-700 rounded-full font-semibold">
+              {categoryInfo.label}
+            </span>
+            <div className="flex items-center gap-1 text-xs text-gray-500">
+              <Calendar className="w-3.5 h-3.5" />
+              <span className="font-medium">{formatDate(expense.date)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Amount */}
+        <div className="flex-shrink-0 text-right">
+          <p className="text-2xl font-bold text-red-600">{formatCurrency(Number(expense.amount))}</p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <button
             onClick={() => setIsEditing(true)}
-            className="p-2 text-gray-600 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors duration-200"
+            className="p-2.5 text-gray-600 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all duration-200 hover:scale-110"
             title="Editar"
           >
             <Edit2 className="w-4 h-4" />
@@ -189,7 +223,7 @@ export default function ExpenseItem({ expense, onUpdate, onDelete }: ExpenseItem
           <button
             onClick={handleDelete}
             disabled={loading}
-            className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 disabled:opacity-50"
+            className="p-2.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-110 disabled:opacity-50"
             title="Excluir"
           >
             <Trash2 className="w-4 h-4" />

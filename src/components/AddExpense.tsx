@@ -32,19 +32,41 @@ export default function AddExpense({ onExpenseAdded }: AddExpenseProps) {
     e.preventDefault();
     if (!user) return;
 
+    // Validar valor numérico
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      alert('Por favor, insira um valor válido maior que zero');
+      return;
+    }
+
+    if (numAmount > 999999999) {
+      alert('Valor muito alto. Máximo permitido: R$ 999.999.999,00');
+      return;
+    }
+
+    // Sanitizar descrição (remover caracteres perigosos)
+    const sanitizedDescription = description
+      .replace(/[<>]/g, '')
+      .trim()
+      .slice(0, 200); // Limitar tamanho
+
+    if (!sanitizedDescription) {
+      alert('Por favor, insira uma descrição válida');
+      return;
+    }
+
     setLoading(true);
 
+    // @ts-ignore - Supabase type inference issue with strict mode
     const { data, error } = await supabase
       .from('expenses')
-      .insert([
-        {
-          user_id: user.id,
-          description,
-          amount: parseFloat(amount),
-          category,
-          date,
-        },
-      ])
+      .insert({
+        user_id: user.id,
+        description: sanitizedDescription,
+        amount: numAmount,
+        category,
+        date,
+      })
       .select()
       .single();
 
@@ -87,6 +109,7 @@ export default function AddExpense({ onExpenseAdded }: AddExpenseProps) {
               <input
                 type="text"
                 required
+                maxLength={200}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 outline-none"
@@ -101,6 +124,8 @@ export default function AddExpense({ onExpenseAdded }: AddExpenseProps) {
               <input
                 type="number"
                 step="0.01"
+                min="0.01"
+                max="999999999"
                 required
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}

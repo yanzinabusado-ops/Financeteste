@@ -1,4 +1,4 @@
-import type { Expense, Income } from '../types/database';
+import type { Expense } from '../types/database';
 
 export interface CategoryBreakdown {
   category: string;
@@ -33,6 +33,18 @@ const CATEGORY_CONFIG = {
   bills: { label: 'Contas', icon: '💡', color: '#FF8B94' },
   shopping: { label: 'Compras', icon: '🛍️', color: '#C7CEEA' },
   other: { label: 'Outros', icon: '📦', color: '#B4A7D6' },
+};
+
+// Mapeamento de nomes de categorias em inglês para português
+const CATEGORY_TRANSLATIONS: Record<string, string> = {
+  'food': 'Alimentação',
+  'transport': 'Transporte',
+  'entertainment': 'Lazer',
+  'health': 'Saúde',
+  'education': 'Educação',
+  'bills': 'Contas',
+  'shopping': 'Compras',
+  'other': 'Outros',
 };
 
 export function getCategoryBreakdown(expenses: Expense[]): CategoryBreakdown[] {
@@ -184,6 +196,11 @@ export function getCategoryColor(category: string): string {
 }
 
 export function getCategoryLabel(category: string): string {
+  // Primeiro tenta traduzir se for inglês
+  const translated = CATEGORY_TRANSLATIONS[category.toLowerCase()];
+  if (translated) return translated;
+  
+  // Senão, usa a config normal
   const config = CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG] || CATEGORY_CONFIG.other;
   return config.label;
 }

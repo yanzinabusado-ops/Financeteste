@@ -8,4 +8,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  db: {
+    schema: 'public',
+  },
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false, // Desabilita detecção de sessão na URL para evitar tokens expirados
+    storage: window.localStorage,
+    flowType: 'pkce', // Usa PKCE flow para melhor segurança
+  },
+});

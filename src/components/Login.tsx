@@ -11,11 +11,34 @@ export default function Login({ onToggleMode }: LoginProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [attemptCount, setAttemptCount] = useState(0);
+  const [lastAttemptTime, setLastAttemptTime] = useState(Date.now());
   const { signIn } = useAuth();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Email inválido');
+      return;
+    }
+
+    // Rate limiting: máximo 5 tentativas por minuto
+    const now = Date.now();
+    if (now - lastAttemptTime < 60000 && attemptCount >= 5) {
+      setError('Muitas tentativas. Aguarde 1 minuto.');
+      return;
+    }
+
+    if (now - lastAttemptTime >= 60000) {
+      setAttemptCount(0);
+    }
+
+    setLastAttemptTime(now);
+    setAttemptCount(prev => prev + 1);
     setLoading(true);
 
     const { error } = await signIn(email, password);

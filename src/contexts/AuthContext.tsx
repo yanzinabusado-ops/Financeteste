@@ -19,18 +19,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Get initial session
+    const initializeAuth = async () => {
+      try {
+        // First, try to get session from storage (not from URL)
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+        
+        console.log('Session recovered:', session ? 'Yes' : 'No');
+        
+        // Clean up URL hash if present (removes stale tokens)
+        if (window.location.hash) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session ? 'Session exists' : 'No session');
+      
+      // Clean up URL hash after successful sign in
+      if (event === 'SIGNED_IN' && window.location.hash) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+      
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      (() => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      })();
     });
 
     return () => subscription.unsubscribe();

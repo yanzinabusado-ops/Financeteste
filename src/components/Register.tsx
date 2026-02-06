@@ -15,18 +15,53 @@ export default function Register({ onToggleMode }: RegisterProps) {
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
 
+  // Calcular força da senha
+  const getPasswordStrength = () => {
+    if (!password) return { strength: 0, label: '', color: '' };
+    
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+    if (strength <= 2) return { strength: 33, label: 'Fraca', color: 'bg-red-500' };
+    if (strength === 3) return { strength: 66, label: 'Média', color: 'bg-yellow-500' };
+    return { strength: 100, label: 'Forte', color: 'bg-green-500' };
+  };
+
+  const passwordStrength = getPasswordStrength();
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess(false);
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Email inválido');
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError('As senhas não coincidem');
       return;
     }
 
-    if (password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres');
+    // Validação de senha mais forte
+    if (password.length < 8) {
+      setError('A senha deve ter pelo menos 8 caracteres');
+      return;
+    }
+
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumber) {
+      setError('A senha deve conter letras maiúsculas, minúsculas e números');
       return;
     }
 
@@ -129,6 +164,29 @@ export default function Register({ onToggleMode }: RegisterProps) {
                 placeholder="••••••••"
               />
             </div>
+            {password && (
+              <div className="mt-2">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs text-gray-600">Força da senha:</span>
+                  <span className={`text-xs font-semibold ${
+                    passwordStrength.label === 'Forte' ? 'text-green-600' :
+                    passwordStrength.label === 'Média' ? 'text-yellow-600' :
+                    'text-red-600'
+                  }`}>
+                    {passwordStrength.label}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full transition-all duration-300 ${passwordStrength.color}`}
+                    style={{ width: `${passwordStrength.strength}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Mínimo 8 caracteres com maiúsculas, minúsculas e números
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">

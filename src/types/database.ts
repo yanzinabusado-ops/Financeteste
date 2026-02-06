@@ -62,9 +62,120 @@ export interface Database {
           updated_at?: string;
         };
       };
+      category_budgets: {
+        Row: {
+          id: string;
+          user_id: string;
+          month_year: string;
+          category: string;
+          limit_amount: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          month_year: string;
+          category: string;
+          limit_amount: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          month_year?: string;
+          category?: string;
+          limit_amount?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      dismissed_insights: {
+        Row: {
+          id: string;
+          user_id: string;
+          insight_key: string;
+          dismissed_at: string;
+          expires_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          insight_key: string;
+          dismissed_at?: string;
+          expires_at: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          insight_key?: string;
+          dismissed_at?: string;
+          expires_at?: string;
+        };
+      };
+      month_transitions: {
+        Row: {
+          id: string;
+          user_id: string;
+          month_year: string;
+          previous_month_total: number;
+          previous_month_expenses_count: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          month_year: string;
+          previous_month_total?: number;
+          previous_month_expenses_count?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          month_year?: string;
+          previous_month_total?: number;
+          previous_month_expenses_count?: number;
+          created_at?: string;
+        };
+      };
+      user_profiles: {
+        Row: {
+          id: string;
+          user_id: string;
+          display_name: string | null;
+          avatar_url: string | null;
+          avatar_emoji: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          display_name?: string | null;
+          avatar_url?: string | null;
+          avatar_emoji?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          display_name?: string | null;
+          avatar_url?: string | null;
+          avatar_emoji?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
   };
 }
 
 export type Income = Database['public']['Tables']['income']['Row'];
 export type Expense = Database['public']['Tables']['expenses']['Row'];
+export type CategoryBudget = Database['public']['Tables']['category_budgets']['Row'];
+export type DismissedInsight = Database['public']['Tables']['dismissed_insights']['Row'];
+export type MonthTransition = Database['public']['Tables']['month_transitions']['Row'];
+export type UserProfile = Database['public']['Tables']['user_profiles']['Row'];

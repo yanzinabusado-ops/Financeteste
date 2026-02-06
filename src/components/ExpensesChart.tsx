@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, ChartOptions } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
 import { getCategoryBreakdown } from '../lib/insights';
@@ -37,7 +37,7 @@ export default function ExpensesChart({ expenses }: ExpensesChartProps) {
         labels: {
           font: {
             size: 12,
-            weight: '500',
+            weight: 500,
           },
           padding: 15,
           usePointStyle: true,

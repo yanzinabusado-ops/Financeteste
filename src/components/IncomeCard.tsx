@@ -21,17 +21,36 @@ export default function IncomeCard({ income, monthYear, onUpdate }: IncomeCardPr
     e.preventDefault();
     if (!user) return;
 
+    // Validar valor numérico
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      alert('Por favor, insira um valor válido maior que zero');
+      return;
+    }
+
+    if (numAmount > 999999999) {
+      alert('Valor muito alto. Máximo permitido: R$ 999.999.999,00');
+      return;
+    }
+
+    // Sanitizar descrição
+    const sanitizedDescription = description
+      .replace(/[<>]/g, '')
+      .trim()
+      .slice(0, 200);
+
     setLoading(true);
 
     const incomeData = {
       user_id: user.id,
-      amount: parseFloat(amount),
+      amount: numAmount,
       month_year: monthYear,
-      description,
+      description: sanitizedDescription,
     };
 
     if (income) {
-      const { data, error } = await supabase
+      // @ts-ignore - Supabase type inference issue with strict mode
+      const { data, error} = await supabase
         .from('income')
         .update(incomeData)
         .eq('id', income.id)
@@ -43,6 +62,7 @@ export default function IncomeCard({ income, monthYear, onUpdate }: IncomeCardPr
         setIsEditing(false);
       }
     } else {
+      // @ts-ignore - Supabase type inference issue with strict mode
       const { data, error } = await supabase
         .from('income')
         .insert([incomeData])
@@ -93,6 +113,8 @@ export default function IncomeCard({ income, monthYear, onUpdate }: IncomeCardPr
             <input
               type="number"
               step="0.01"
+              min="0.01"
+              max="999999999"
               required
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -107,6 +129,7 @@ export default function IncomeCard({ income, monthYear, onUpdate }: IncomeCardPr
             </label>
             <input
               type="text"
+              maxLength={200}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 outline-none"

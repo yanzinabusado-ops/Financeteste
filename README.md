@@ -1,202 +1,124 @@
-# FinanceControl - Controle Financeiro Pessoal
+# FinanceControl
 
-Uma aplicação web moderna e animada para controle financeiro pessoal, construída com React, TypeScript, Tailwind CSS e Supabase.
+Sistema inteligente de controle financeiro pessoal com análise de dados e insights automáticos.
 
-## Funcionalidades
+## 🚀 Tecnologias
 
-### Autenticação
-- Cadastro de usuários com email e senha
-- Login seguro com JWT
-- Proteção de rotas privadas
-- Logout seguro
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: Tailwind CSS
+- **Backend**: Supabase (PostgreSQL + Auth + RLS)
+- **Charts**: Chart.js + react-chartjs-2
+- **Icons**: Lucide React
 
-### Gestão Financeira
-- **Renda Mensal**: Cadastre e gerencie sua renda mensal
-- **Despesas**:
-  - Adicione despesas com descrição, valor, categoria e data
-  - Edite despesas existentes
-  - Exclua despesas
-  - Filtre por categoria
-  - 8 categorias disponíveis: Alimentação, Transporte, Lazer, Saúde, Educação, Contas, Compras e Outros
+## ✨ Funcionalidades
 
-### Dashboard
-- Visualização clara da renda mensal
-- Total de gastos
-- Saldo restante (renda - gastos)
-- Cards informativos com animações
-- Interface responsiva e moderna
+- 📊 Dashboard com visão geral financeira
+- 💰 Gestão de receitas e despesas
+- 📈 Gráficos interativos de gastos por categoria
+- 🎯 Sistema de orçamentos com alertas
+- 🔍 Insights financeiros automáticos
+- 📱 Interface responsiva
+- 🔐 Autenticação segura com Supabase
+- 🌙 Análise de comportamento de gastos
 
-## Tecnologias Utilizadas
-
-### Frontend
-- **React 18** - Biblioteca JavaScript para interfaces
-- **TypeScript** - Tipagem estática
-- **Tailwind CSS** - Framework CSS utilitário
-- **Lucide React** - Ícones modernos
-- **Vite** - Build tool rápido
-
-### Backend e Banco de Dados
-- **Supabase** - Backend-as-a-Service
-  - PostgreSQL database
-  - Authentication
-  - Row Level Security (RLS)
-  - RESTful API automática
-
-## Arquitetura REST
-
-A aplicação segue os princípios REST/RESTful:
-
-### Endpoints Supabase (gerados automaticamente)
-
-#### Autenticação
-- `POST /auth/v1/signup` - Cadastro de usuário
-- `POST /auth/v1/token?grant_type=password` - Login
-- `POST /auth/v1/logout` - Logout
-
-#### Recursos (protegidos por autenticação)
-
-**Renda (income)**
-- `GET /rest/v1/income` - Listar renda do usuário
-- `POST /rest/v1/income` - Criar renda
-- `PATCH /rest/v1/income?id=eq.{id}` - Atualizar renda
-- `DELETE /rest/v1/income?id=eq.{id}` - Deletar renda
-
-**Despesas (expenses)**
-- `GET /rest/v1/expenses` - Listar despesas
-- `POST /rest/v1/expenses` - Criar despesa
-- `PATCH /rest/v1/expenses?id=eq.{id}` - Atualizar despesa
-- `DELETE /rest/v1/expenses?id=eq.{id}` - Deletar despesa
-
-### Segurança
-
-- **Row Level Security (RLS)** habilitado em todas as tabelas
-- Usuários só acessam seus próprios dados
-- Policies de segurança para SELECT, INSERT, UPDATE e DELETE
-- JWT para autenticação de requisições
-
-## Estrutura do Projeto
-
-```
-src/
-├── components/          # Componentes React
-│   ├── AuthPage.tsx    # Página de autenticação
-│   ├── Login.tsx       # Componente de login
-│   ├── Register.tsx    # Componente de cadastro
-│   ├── Dashboard.tsx   # Dashboard principal
-│   ├── SummaryCards.tsx # Cards de resumo financeiro
-│   ├── IncomeCard.tsx  # Gerenciamento de renda
-│   ├── AddExpense.tsx  # Adicionar despesa
-│   ├── ExpensesList.tsx # Lista de despesas
-│   └── ExpenseItem.tsx # Item individual de despesa
-├── contexts/           # Contextos React
-│   └── AuthContext.tsx # Contexto de autenticação
-├── lib/               # Bibliotecas e configurações
-│   └── supabase.ts    # Cliente Supabase
-├── types/             # Tipos TypeScript
-│   └── database.ts    # Tipos do banco de dados
-├── App.tsx            # Componente principal
-├── main.tsx           # Entry point
-└── index.css          # Estilos globais e animações
-```
-
-## Schema do Banco de Dados
-
-### Tabela: income
-```sql
-- id (uuid, primary key)
-- user_id (uuid, foreign key -> auth.users)
-- amount (numeric)
-- month_year (text)
-- description (text)
-- created_at (timestamptz)
-- updated_at (timestamptz)
-```
-
-### Tabela: expenses
-```sql
-- id (uuid, primary key)
-- user_id (uuid, foreign key -> auth.users)
-- description (text)
-- amount (numeric)
-- category (text)
-- date (date)
-- created_at (timestamptz)
-- updated_at (timestamptz)
-```
-
-## Animações e UX
-
-- Transições suaves em todos os elementos interativos
-- Hover effects em cards e botões
-- Animações de entrada (slide, fade)
-- Feedback visual para ações (loading states)
-- Gradientes modernos
-- Scrollbar customizada
-- Interface responsiva
-
-## Como Rodar o Projeto
+## 🛠️ Instalação
 
 ### Pré-requisitos
-- Node.js 18+ instalado
+
+- Node.js 18+
 - Conta no Supabase (gratuita)
 
-### Instalação
+### Passo 1: Clone o repositório
 
-1. Clone o repositório
+```bash
+git clone <seu-repositorio>
+cd FinanceControl
+```
 
-2. Instale as dependências:
+### Passo 2: Instale as dependências
+
 ```bash
 npm install
 ```
 
-3. Configure as variáveis de ambiente:
-O arquivo `.env` já está configurado com as credenciais do Supabase.
+### Passo 3: Configure o Supabase
 
-4. Rode a aplicação:
+1. Crie um projeto em [supabase.com](https://supabase.com)
+2. Execute as migrations em `supabase/migrations/` no SQL Editor
+3. Copie as credenciais do projeto
+
+### Passo 4: Configure as variáveis de ambiente
+
+Crie um arquivo `.env` na raiz:
+
+```env
+VITE_SUPABASE_URL=sua_url_do_supabase
+VITE_SUPABASE_ANON_KEY=sua_chave_anonima
+```
+
+### Passo 5: Execute o projeto
+
 ```bash
 npm run dev
 ```
 
-5. Acesse no navegador:
+Acesse: `http://localhost:5173`
+
+## 📁 Estrutura do Projeto
+
 ```
-http://localhost:5173
+FinanceControl/
+├── src/
+│   ├── components/      # Componentes React
+│   ├── contexts/        # Context API (Auth)
+│   ├── hooks/          # Custom hooks
+│   ├── lib/            # Utilitários e configurações
+│   └── types/          # TypeScript types
+├── supabase/
+│   └── migrations/     # SQL migrations
+└── public/            # Assets estáticos
 ```
 
-### Build para Produção
+## 🔒 Segurança
+
+- Row Level Security (RLS) habilitado
+- Autenticação JWT via Supabase
+- Validação de inputs no frontend
+- Sanitização de dados
+- Políticas de acesso por usuário
+
+## 🧪 Testes
+
+```bash
+npm run test
+```
+
+## 📦 Build
 
 ```bash
 npm run build
 ```
 
-Os arquivos otimizados estarão na pasta `dist/`.
+## 📝 Scripts Disponíveis
 
-## Recursos de Segurança
+- `npm run dev` - Inicia servidor de desenvolvimento
+- `npm run build` - Build de produção
+- `npm run preview` - Preview do build
+- `npm run test` - Executa testes
+- `npm run lint` - Verifica código com ESLint
 
-1. **Senhas**: Criptografadas com bcrypt pelo Supabase
-2. **JWT**: Tokens seguros para autenticação
-3. **RLS**: Políticas de segurança no nível do banco
-4. **Validação**: Validação de dados no frontend e backend
-5. **HTTPS**: Todas as requisições via HTTPS
+## 🤝 Contribuindo
 
-## Status HTTP Utilizados
+1. Fork o projeto
+2. Crie uma branch (`git checkout -b feature/nova-feature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`)
+4. Push para a branch (`git push origin feature/nova-feature`)
+5. Abra um Pull Request
 
-- `200 OK` - Requisição bem-sucedida
-- `201 Created` - Recurso criado com sucesso
-- `400 Bad Request` - Erro de validação
-- `401 Unauthorized` - Não autenticado
-- `404 Not Found` - Recurso não encontrado
-- `500 Internal Server Error` - Erro no servidor
+## 📄 Licença
 
-## Melhorias Futuras
+Este projeto está sob a licença MIT.
 
-- Gráficos e relatórios visuais
-- Exportação de dados (PDF, Excel)
-- Metas financeiras
-- Notificações de gastos
-- Modo escuro
-- Multi-moedas
-- Categorias personalizadas
+## 👤 Autor
 
-## Licença
-
-MIT License - Sinta-se livre para usar e modificar!
+Desenvolvido com ❤️ para ajudar no controle financeiro pessoal.
